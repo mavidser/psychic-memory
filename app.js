@@ -14,24 +14,23 @@ app.use(bodyParser.urlencoded({
   extended: true
 }));
 
+app.get('/', (req, res) => res.json({ isApiDown: false }))
 app.use('/api/', api);
 
-// catch 404 and forward to error handler
+// catch 404 and forward to   error handler
 app.use(function (req, res, next) {
-  const err = new Error('Not Found');
+  const err = new Error('404: Not Found');
   err.status = 404;
   next(err);
 });
 
 // error handler
-app.use(function (err, req, res) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+app.use(function (err, req, res, next) {
+  const out = {}
+  out.error = err.message;
 
-  // render the error page
   res.status(err.status || 500);
-  res.render('error');
+  res.json(out);
 });
 
 module.exports = app;
