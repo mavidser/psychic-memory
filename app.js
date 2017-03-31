@@ -1,5 +1,6 @@
 'use strict';
 
+const path = require('path');
 const express = require('express');
 const logger = require('morgan');
 const bodyParser = require('body-parser');
@@ -8,13 +9,15 @@ const api = require('./routes/api');
 
 const app = express();
 
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'pug');
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({
   extended: true
 }));
 
-app.get('/', (req, res) => res.json({ isApiDown: false }))
+app.get('/', (req, res) => res.render('index.pug'));
 app.use('/api/', api);
 
 // catch 404 and forward to   error handler

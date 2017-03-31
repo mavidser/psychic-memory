@@ -1,0 +1,173 @@
+html
+  head
+    title Email Services API
+    style.
+      body {
+        font-family: sans-serif;
+        background: #eee;
+        padding: 20px;
+      }
+      .es {
+        display: block;
+        border: none;
+        margin: 9px;
+        border-radius: 2px;
+        padding: 10px;
+        font-size: 1em;
+      }
+      .wide {
+        width: 600px;
+      }
+      input, button {
+        width: 300px;
+      }
+      textarea {
+        height: 300px;
+        resize: none;
+      }
+      #html {
+        font-family: monospace;
+      }
+      button.es {
+        display: inline-block;
+        background: #999;
+      }
+      button:hover, button:focus {
+        border: none;
+        background: #aaa;
+      }
+      button:active {
+        background: #888;
+      }
+      summary {
+        color: #999;
+        font-size: 0.8em;
+        margin: 10px;
+      }
+      details summary::-webkit-details-marker {
+        color: #999;
+      }
+      #loading {
+        display: inline-block;
+      }
+      #status {
+        color: #999;
+      }
+      #loading-spinner,
+      #loading-spinner:after {
+        display: none;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+      }
+      #loading-spinner {
+        margin: 0 10px;
+        font-size: 20px;
+        position: relative;
+        text-indent: -9999em;
+        border-top: 5px solid rgba(0, 0, 0, 0.1);
+        border-right: 5px solid rgba(0, 0, 0, 0.1);
+        border-bottom: 5px solid rgba(0, 0, 0, 0.1);
+        border-left: 5px solid #999;
+        -webkit-transform: translateZ(0);
+        -ms-transform: translateZ(0);
+        transform: translateZ(0);
+        -webkit-animation: loading-spinner-circle 1.1s infinite linear;
+        animation: loading-spinner-circle 1.1s infinite linear;
+      }
+      @-webkit-keyframes loading-spinner-circle {
+        0% {
+          -webkit-transform: rotate(0deg);
+          transform: rotate(0deg);
+        }
+        100% {
+          -webkit-transform: rotate(360deg);
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes loading-spinner-circle {
+        0% {
+          -webkit-transform: rotate(0deg);
+          transform: rotate(0deg);
+        }
+        100% {
+          -webkit-transform: rotate(360deg);
+          transform: rotate(360deg);
+        }
+      }
+  body
+    .vertical
+      input.es#from(type='email', placeholder='From')
+      input.es#to(type='email', placeholder='To')
+      input.es#cc(type='email', placeholder='CC')
+      input.es#bcc(type='email', placeholder='BCC')
+      input.es.wide#subject(type='text', placeholder='Subject')
+      textarea.es.wide#text(placeholder='Email Text')
+      details
+        summary HTML content
+        textarea.es.wide#html(placeholder='Email HTML')
+      button.es#send Send
+      #loading
+        #loading-spinner Loading...
+        span#status 
+    script.
+      var http;  
+      function setStatus(text, status) {
+        if (status)
+          document.getElementById('loading-spinner').style.display = 'inner-block';
+        else
+          document.getElementById('loading-spinner').style.display = 'none';
+        document.getElementById('status').innerHTML = text;
+      }
+      document.getElementById('send')
+      .addEventListener('click',function(event) {
+        var from = document.getElementById('from').value;
+        var to = document.getElementById('to').value;
+        var cc = document.getElementById('cc').value;
+        var bcc = document.getElementById('bcc').value;
+        var subject = document.getElementById('subject').value;
+        var text = document.getElementById('text').value;
+        var html = document.getElementById('html').value;
+        
+        if (from.length ==== 0 || to.length ==== 0) {
+          setStatus('From and To fields are compulsory', false);
+        } else if ((from.length > 0 && from.indexOf('@') ==== -1) ||
+          (to.length > 0 && to.indexOf('@') ==== -1) ||
+          (cc.length > 0 && cc.indexOf('@') ==== -1) ||
+          (bcc.length > 0 && bcc.indexOf('@') ==== -1)) {
+
+          setStatus('Emails not valid', false);
+        } else {
+          setStatus('Loading...', true);
+          if (http)
+            http.abort();
+          http = new XMLHttpRequest();
+          var url = '/api/send/';
+          var params = {
+            from: from,
+            to: to,
+            cc: cc,
+            bcc: bcc,
+            subject: subject,
+            text: text,
+            html: html
+          }
+          http.open("POST", url, true);
+          http.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+          http.onreadystatechange = function() {
+            if(http.readyState === 4 && http.status === 200) {
+              setStatus('Email sent', false);
+            } else if(http.readyState === 4) {
+              try {
+                setStatus('Error: ' + JSON.parse(http.responseText).error, false);
+              } catch(e) {
+                setStatus('Some Error occurred while sending E-mail', false);
+              }
+            }
+          }
+          params = Object.keys(params).map(function(item) {
+            return item + '=' + encodeURIComponent(params[item]);
+          }).join('&');
+          http.send(params);
+        }
+      })
